@@ -1,6 +1,7 @@
 from PyQt5 import QtOpenGL
-from OpenGL.GL import *
 from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from OpenGL.GL import *
 
 
 class Canvas(QtOpenGL.QGLWidget):
@@ -14,14 +15,27 @@ class Canvas(QtOpenGL.QGLWidget):
         self.m_R = 1000.0
         self.m_B = -1000.0
         self.m_T = 1000.0
+        self.list = None
+        self.m_buttonPressed = False
+        self.moved = False
+        self.m_pt0 = QPoint(0.0,0.0)
+        self.m_pt1 = QPoint(0.0,0.0)
     
     def initializeGL(self): #glClearColor(1.0, 1.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
-    
+        glEnable(GL_LINE_SMOOTH)
+        self.list = glGenLists(1)
+            
     def resizeGL(self, _width, _height):
         # store GL canvas sizes in object properties
         self.m_w = _width
         self.m_h = _height
+        
+        if(self._model==None)or(self._model.isEmpty()): 
+            self.scaleWorldWindow(1.0)
+        else:
+            self.m_L,self.m_R,self.m_B,self.m_T = self._model.getBoundBox()
+            self.scaleWorldWindow(1.1)
         # setup the viewport to canvas dimensions
         glViewport(0, 0, self.m_w, self.m_h)
         # reset the coordinate system
@@ -39,23 +53,42 @@ class Canvas(QtOpenGL.QGLWidget):
     def paintGL(self):
         # clear the buffer with the current clear color
         glClear(GL_COLOR_BUFFER_BIT)
-
-        if self._model == None or self._model.isEmpty():
-            return
         
-        verts = self._model.getVerts()
-        glShadeModel(GL_SMOOTH)
-        glColor3f(0.0, 1.0, 0.0) # green
-        glBegin(GL_TRIANGLES)
-        for vtx in verts:
-            glVertex2f(vtx.getX(), vtx.getY())
+        glCallList(self.list)
+        glDeleteLists(self.list, 1)
+        self.list = glGenLists(1)
+        glNewList(self.list, GL_COMPILE)
+        pt0_U = self.convertPtCoordsToUniverse(self.m_pt0)
+        pt1_U = self.convertPtCoordsToUniverse(self.m_pt1)
+        
+        glColor3f(1.0, 1.0, 0.0)
+        glBegin(GL_LINES)
+        
+        glVertex2f(pt0_U.x(), pt0_U.y())
+        glVertex2f(pt1_U.x(), pt1_U.y())
+        
         glEnd()
+        if not((self._model == None) and (self._model.isEmpty())):
+            verts = self._model.getVerts()
+            glColor3f(0.0, 1.0, 0.0) # green
+            glBegin(GL_TRIANGLES)
+            for vtx in verts:
+                glVertex2f(vtx.getX(), vtx.getY())
+            glEnd()
+            curves = self._model.getCurves()
+            glColor3f(0.0, 0.0, 1.0) # blue
+            glBegin(GL_LINES)
+            for curv in curves:
+                glVertex2f(curv.getP1().getX(), curv.getP1().getY())
+                glVertex2f(curv.getP2().getX(), curv.getP2().getY())
+            glEnd()
+        
+        glEndList()
 
     def setModel(self, model):
         self._model = model
 
     def fitWorldToViewport(self):
-        print("fitWorldToViewport")
         if self._model == None:
             return
         self.m_L,self.m_R,self.m_B,self.m_T=self._model.getBoundBox()
@@ -100,3 +133,43 @@ class Canvas(QtOpenGL.QGLWidget):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glOrtho(self.m_L, self.m_R, self.m_B, self.m_T, -1.0, 1.0)
+        
+    def convertPtCoordsToUniverse(self, _pt):
+        dX = self.m_R - self.m_L
+        dY = self.m_T - self.m_B
+        mX = _pt.x() * dX / self.m_w
+        mY = (self.m_h - _pt.y()) * dY / self.m_h
+        x = self.m_L + mX
+        y = self.m_B + mY
+        return QPointF(x,y)  
+        
+    def mousePressEvent(self, event):
+        self.m_buttonPressed = True
+        self.m_pt0 = event.pos()
+        
+    def mouseMoveEvent(self, event):
+        if self.m_buttonPressed:
+            self.moved = True
+            self.m_pt1 = event.pos()
+            self.update()
+            
+    def mouseReleaseEvent(self, event):
+        if not self.moved:
+            self.m_pt0.setX(0.0)
+            self.m_pt0.setY(0.0)
+            return
+            
+        pt0_U = self.convertPtCoordsToUniverse(self.m_pt0)
+        pt1_U = self.convertPtCoordsToUniverse(self.m_pt1)
+        
+        print("setou")
+        self._model.setCurve(pt0_U.x(),pt0_U.y(),pt1_U.x(), pt1_U.y())
+        
+        self.m_buttonPressed = False
+        self.moved = False
+        
+        self.m_pt0.setX(0.0)
+        self.m_pt0.setY(0.0)
+        self.m_pt1.setX(0.0)
+        self.m_pt1.setY(0.0)
+        self.update()

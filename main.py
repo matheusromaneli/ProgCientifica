@@ -1,7 +1,6 @@
 import sys
 from window import *
 
-
 def main():
     app = QApplication(sys.argv)
     gui = Window()
