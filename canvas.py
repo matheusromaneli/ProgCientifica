@@ -2,6 +2,12 @@ from PyQt5 import QtOpenGL
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from OpenGL.GL import *
+import jsonschema
+from hetool.he.hecontroller import HeController
+from hetool.he.hemodel import HeModel
+from hetool.geometry.segments.line import Line
+from hetool.geometry.point import Point
+from hetool.compgeom.tesselation import Tesselation
 
 
 class Canvas(QtOpenGL.QGLWidget):
@@ -9,6 +15,8 @@ class Canvas(QtOpenGL.QGLWidget):
     def __init__(self):
         super(Canvas, self).__init__()
         self._model = None
+        self._hmodel = HeModel()
+        self._controller = HeController(self._hmodel)
         self.m_w = 0 # width: GL canvas horizontal size
         self.m_h = 0 # height: GL canvas vertical size
         self.m_L = -1000.0
@@ -18,8 +26,8 @@ class Canvas(QtOpenGL.QGLWidget):
         self.list = None
         self.m_buttonPressed = False
         self.moved = False
-        self.m_pt0 = QPoint(0.0,0.0)
-        self.m_pt1 = QPoint(0.0,0.0)
+        self.m_pt0 = QPointF(0.0, 0.0)
+        self.m_pt1 = QPointF(0.0, 0.0)
     
     def initializeGL(self): #glClearColor(1.0, 1.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
@@ -68,20 +76,28 @@ class Canvas(QtOpenGL.QGLWidget):
         glVertex2f(pt1_U.x(), pt1_U.y())
         
         glEnd()
-        if not((self._model == None) and (self._model.isEmpty())):
-            verts = self._model.getVerts()
-            glColor3f(0.0, 1.0, 0.0) # green
-            glBegin(GL_TRIANGLES)
-            for vtx in verts:
-                glVertex2f(vtx.getX(), vtx.getY())
-            glEnd()
-            curves = self._model.getCurves()
+        if not(self._hmodel.isEmpty()):
+            patches = self._hmodel.getPatches()
+            for pat in patches:
+                pts = pat.getPoints()
+                triangs = Tesselation.tessellate(pts)
+                glColor3f(1.0,0.0,1.0)
+                for j in range(len(triangs)):
+                    print(pts)
+                    print(triangs[j])
+                    glBegin(GL_TRIANGLES)
+                    glVertex2d(triangs[j][0].getX(), triangs[j][0].getY())
+                    glVertex2d(triangs[j][1].getX(), triangs[j][1].getY())
+                    glVertex2d(triangs[j][2].getX(), triangs[j][2].getY())
+                    glEnd()
+            segments = self._hmodel.getSegments()
             glColor3f(0.0, 0.0, 1.0) # blue
-            glBegin(GL_LINES)
-            for curv in curves:
-                glVertex2f(curv.getP1().getX(), curv.getP1().getY())
-                glVertex2f(curv.getP2().getX(), curv.getP2().getY())
-            glEnd()
+            for curves in segments:
+                ptc = curves.getPointsToDraw()
+                glBegin(GL_LINES)
+                glVertex2f(ptc[0].getX(), ptc[0].getY())
+                glVertex2f(ptc[1].getX(), ptc[1].getY())
+                glEnd()
         
         glEndList()
 
@@ -89,9 +105,9 @@ class Canvas(QtOpenGL.QGLWidget):
         self._model = model
 
     def fitWorldToViewport(self):
-        if self._model == None:
+        if self._hmodel.isEmpty():
             return
-        self.m_L,self.m_R,self.m_B,self.m_T=self._model.getBoundBox()
+        self.m_L,self.m_R,self.m_B,self.m_T = self._model.getBoundBox()
         self.scaleWorldWindow(1.10)
         self.update()
 
@@ -155,21 +171,25 @@ class Canvas(QtOpenGL.QGLWidget):
             
     def mouseReleaseEvent(self, event):
         if not self.moved:
-            self.m_pt0.setX(0.0)
-            self.m_pt0.setY(0.0)
+            self.m_pt0.setX(0)
+            self.m_pt0.setY(0)
             return
             
         pt0_U = self.convertPtCoordsToUniverse(self.m_pt0)
         pt1_U = self.convertPtCoordsToUniverse(self.m_pt1)
-        
-        print("setou")
-        self._model.setCurve(pt0_U.x(),pt0_U.y(),pt1_U.x(), pt1_U.y())
-        
+        # self._model.setCurve(pt0_U.x(),pt0_U.y(),pt1_U.x(), pt1_U.y())
+
+        p0 = Point(pt0_U.x(), pt0_U.y())
+        p1 = Point(pt1_U.x(), pt1_U.y())
+        segment = Line(p0,p1)
+        self._controller.insertSegment(segment,0.1)
+
         self.m_buttonPressed = False
         self.moved = False
-        
-        self.m_pt0.setX(0.0)
-        self.m_pt0.setY(0.0)
-        self.m_pt1.setX(0.0)
-        self.m_pt1.setY(0.0)
+
+        self.m_pt0.setX(0)
+        self.m_pt0.setY(0)
+        self.m_pt1.setX(0)
+        self.m_pt1.setY(0)
         self.update()
+        self.repaint()
