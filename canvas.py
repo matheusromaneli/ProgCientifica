@@ -2,21 +2,24 @@ from PyQt5 import QtOpenGL
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from OpenGL.GL import *
+
 import jsonschema
 from hetool.he.hecontroller import HeController
 from hetool.he.hemodel import HeModel
+from hetool.he.heview import HeView
 from hetool.geometry.segments.line import Line
 from hetool.geometry.point import Point
 from hetool.compgeom.tesselation import Tesselation
+from collector import CurveCollector
 
 
 class Canvas(QtOpenGL.QGLWidget):
     
     def __init__(self):
         super(Canvas, self).__init__()
-        self._model = None
         self._hmodel = HeModel()
         self._controller = HeController(self._hmodel)
+        self._view = HeView(self._hmodel)
         self.m_w = 0 # width: GL canvas horizontal size
         self.m_h = 0 # height: GL canvas vertical size
         self.m_L = -1000.0
@@ -28,7 +31,14 @@ class Canvas(QtOpenGL.QGLWidget):
         self.moved = False
         self.m_pt0 = QPointF(0.0, 0.0)
         self.m_pt1 = QPointF(0.0, 0.0)
+        self.tools = []
+        self.tool = None
+        self.state = "None"
     
+    def setState(self, _state):
+        self.state = _state
+        self.tool = self.tools[_state]
+
     def initializeGL(self): #glClearColor(1.0, 1.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
         glEnable(GL_LINE_SMOOTH)
@@ -39,10 +49,10 @@ class Canvas(QtOpenGL.QGLWidget):
         self.m_w = _width
         self.m_h = _height
         
-        if(self._model==None)or(self._model.isEmpty()): 
+        if self._hmodel.isEmpty(): 
             self.scaleWorldWindow(1.0)
         else:
-            self.m_L,self.m_R,self.m_B,self.m_T = self._model.getBoundBox()
+            self.m_L,self.m_R,self.m_B,self.m_T = self._view.getBoundBox()
             self.scaleWorldWindow(1.1)
         # setup the viewport to canvas dimensions
         glViewport(0, 0, self.m_w, self.m_h)
@@ -83,8 +93,6 @@ class Canvas(QtOpenGL.QGLWidget):
                 triangs = Tesselation.tessellate(pts)
                 glColor3f(1.0,0.0,1.0)
                 for j in range(len(triangs)):
-                    print(pts)
-                    print(triangs[j])
                     glBegin(GL_TRIANGLES)
                     glVertex2d(triangs[j][0].getX(), triangs[j][0].getY())
                     glVertex2d(triangs[j][1].getX(), triangs[j][1].getY())
@@ -101,13 +109,10 @@ class Canvas(QtOpenGL.QGLWidget):
         
         glEndList()
 
-    def setModel(self, model):
-        self._model = model
-
     def fitWorldToViewport(self):
         if self._hmodel.isEmpty():
             return
-        self.m_L,self.m_R,self.m_B,self.m_T = self._model.getBoundBox()
+        self.m_L,self.m_R,self.m_B,self.m_T = self._view.getBoundBox()
         self.scaleWorldWindow(1.10)
         self.update()
 
@@ -158,7 +163,15 @@ class Canvas(QtOpenGL.QGLWidget):
         x = self.m_L + mX
         y = self.m_B + mY
         return QPointF(x,y)  
-        
+
+    def wheelEvent(self, event):
+        if event.angleDelta().y() > 0:
+            print(event.x())
+            self.scaleWorldWindow(0.9)
+        else:
+            self.scaleWorldWindow(1.1)
+        self.update()
+
     def mousePressEvent(self, event):
         self.m_buttonPressed = True
         self.m_pt0 = event.pos()

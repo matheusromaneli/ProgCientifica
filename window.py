@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from canvas import *
 from model import *
-
+from tools import TOOLS
 
 class Window(QMainWindow):
 
@@ -12,17 +12,13 @@ class Window(QMainWindow):
         self.setWindowTitle("MyGLDrawer")
         self.canvas = Canvas()
         self.setCentralWidget(self.canvas)
-        self.model = MyModel()
-        self.canvas.setModel(self.model)
         tb = self.addToolBar("File")
-        fit = QAction(QIcon("icons/fit.png"),"fit",self)
-        rotate = QAction(QIcon("icons/fit.jpg"),"rotate",self)
-        color = QAction(QIcon("icons/fit.jpg"),"color",self)
-        tb.addAction(fit)
-        tb.addAction(rotate)
-        tb.addAction(color)
+
+        for tool in TOOLS:
+            new_action = QAction(QIcon("assets/"+tool["asset"]), tool["name"], self)
+            tb.addAction(new_action)
+
         tb.actionTriggered[QAction].connect(self.tbpressed)
 
     def tbpressed(self,a):
-        if a.text() == "fit":
-            self.canvas.fitWorldToViewport()
+        self.canvas.setState(a.text())
