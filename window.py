@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from canvas import *
-from model import *
 from tools import TOOLS
 
 class Window(QMainWindow):
@@ -21,4 +20,7 @@ class Window(QMainWindow):
         tb.actionTriggered[QAction].connect(self.tbpressed)
 
     def tbpressed(self,a):
-        self.canvas.setState(a.text())
+        if a.text() == "fit":
+            self.canvas.fitWorldToViewport()
+        else:
+            self.canvas.setState(a.text())

@@ -27,6 +27,7 @@ class CurveCollector():
     # Point Collection (depends on curve type and points collected)
     def collectPoint(self, _x, _y):
         isComplete = False
+        
         if self.m_isActive:
             if self.m_curveType == "Line":
                 if len(self.m_ctrlPts) == 0:
@@ -41,6 +42,12 @@ class CurveCollector():
                     self.m_ctrlPts.append([_x, _y])
                 elif len(self.m_ctrlPts) == 2:
                     self.m_ctrlPts.append([_x, _y])
+                    nSampling = 20
+                    for ii in range(nSampling+1):
+                        t = ii/nSampling
+                        ptx = (1-t)**2*self.m_ctrlPts[0][0] + 2*(1-t)*t*self.m_ctrlPts[1][0] + t**2*self.m_ctrlPts[2][0]
+                        pty = (1-t)**2*self.m_ctrlPts[0][1] + 2*(1-t)*t*self.m_ctrlPts[1][1] + t**2*self.m_ctrlPts[2][1]
+                        self.m_tempCurve.append([ptx, pty])
                     isComplete = True
             elif self.m_curveType == "CircleCR":
                 if len(self.m_ctrlPts) == 0:
@@ -80,10 +87,8 @@ class CurveCollector():
                 self.m_tempCurve = []
                 for ii in range(nSampling+1):
                     t = ii/nSampling
-                    ptx = (1-t)**2*self.m_ctrlPts[0][0] + \
-                        2*(1-t)*t*_x + t**2*self.m_ctrlPts[1][0]
-                    pty = (1-t)**2*self.m_ctrlPts[0][1] + \
-                        2*(1-t)*t*_y + t**2*self.m_ctrlPts[1][1]
+                    ptx = (1-t)**2*self.m_ctrlPts[0][0] + 2*(1-t)*t*self.m_ctrlPts[1][0] + t**2*self.m_ctrlPts[2][0]
+                    pty = (1-t)**2*self.m_ctrlPts[0][1] + 2*(1-t)*t*self.m_ctrlPts[1][1] + t**2*self.m_ctrlPts[2][1]
                     self.m_tempCurve.append([ptx, pty])
         elif self.m_curveType == "CircleCR":
             if len(self.m_ctrlPts) == 0:

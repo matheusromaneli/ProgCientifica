@@ -3,3 +3,4 @@ TOOLS = [
     {"name": "select", "asset": "select.png"},
     {"name": "curve", "asset": "curve.png"},
 ]
+

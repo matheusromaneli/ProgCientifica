@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from OpenGL.GL import *
 
-import jsonschema
 from hetool.he.hecontroller import HeController
 from hetool.he.hemodel import HeModel
 from hetool.he.heview import HeView
@@ -31,14 +30,22 @@ class Canvas(QtOpenGL.QGLWidget):
         self.moved = False
         self.m_pt0 = QPointF(0.0, 0.0)
         self.m_pt1 = QPointF(0.0, 0.0)
-        self.tools = []
-        self.tool = None
         self.state = "None"
+        self.curve_collector = CurveCollector()
+        self.m_curves = []
     
     def setState(self, _state):
         self.state = _state
-        self.tool = self.tools[_state]
+        if _state == "curve":
+            self.curve_collector.activateCollector("Bezier2")
+        else:
+            self.curve_collector.deactivateCollector()
 
+    def getEventUCoordinates(self, event):
+        m_pt = event.pos()
+        pt_u = self.convertPtCoordsToUniverse(m_pt)
+        return pt_u.x(), pt_u.y()
+    
     def initializeGL(self): #glClearColor(1.0, 1.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
         glEnable(GL_LINE_SMOOTH)
@@ -86,6 +93,15 @@ class Canvas(QtOpenGL.QGLWidget):
         glVertex2f(pt1_U.x(), pt1_U.y())
         
         glEnd()
+        for curve in self.m_curves:
+            glColor3f(0.0,1.0,0.0)
+            glBegin(GL_LINE_STRIP)
+            for i in range(len(curve)):
+                pt0 = curve[i]
+                # pt1 = curve[i+1]
+                glVertex2f(pt0[0], pt0[1])
+                # glVertex2f(pt1[0], pt1[1])
+            glEnd()
         if not(self._hmodel.isEmpty()):
             patches = self._hmodel.getPatches()
             for pat in patches:
@@ -106,7 +122,7 @@ class Canvas(QtOpenGL.QGLWidget):
                 glVertex2f(ptc[0].getX(), ptc[0].getY())
                 glVertex2f(ptc[1].getX(), ptc[1].getY())
                 glEnd()
-        
+
         glEndList()
 
     def fitWorldToViewport(self):
@@ -166,7 +182,6 @@ class Canvas(QtOpenGL.QGLWidget):
 
     def wheelEvent(self, event):
         if event.angleDelta().y() > 0:
-            print(event.x())
             self.scaleWorldWindow(0.9)
         else:
             self.scaleWorldWindow(1.1)
@@ -181,28 +196,35 @@ class Canvas(QtOpenGL.QGLWidget):
             self.moved = True
             self.m_pt1 = event.pos()
             self.update()
+
             
     def mouseReleaseEvent(self, event):
-        if not self.moved:
-            self.m_pt0.setX(0)
-            self.m_pt0.setY(0)
-            return
-            
-        pt0_U = self.convertPtCoordsToUniverse(self.m_pt0)
-        pt1_U = self.convertPtCoordsToUniverse(self.m_pt1)
-        # self._model.setCurve(pt0_U.x(),pt0_U.y(),pt1_U.x(), pt1_U.y())
+        if self.state == "line":
+            if not self.moved:
+                self.m_pt0.setX(0)
+                self.m_pt0.setY(0)
+                return
+                
+            pt0_U = self.convertPtCoordsToUniverse(self.m_pt0)
+            pt1_U = self.convertPtCoordsToUniverse(self.m_pt1)
+            # self._model.setCurve(pt0_U.x(),pt0_U.y(),pt1_U.x(), pt1_U.y())
 
-        p0 = Point(pt0_U.x(), pt0_U.y())
-        p1 = Point(pt1_U.x(), pt1_U.y())
-        segment = Line(p0,p1)
-        self._controller.insertSegment(segment,0.1)
+            p0 = Point(pt0_U.x(), pt0_U.y())
+            p1 = Point(pt1_U.x(), pt1_U.y())
+            segment = Line(p0,p1)
+            self._controller.insertSegment(segment,0.1)
 
-        self.m_buttonPressed = False
-        self.moved = False
-
+            self.m_buttonPressed = False
+            self.moved = False
+        elif self.state == "curve":
+            x,y = self.getEventUCoordinates(event)
+            finish = self.curve_collector.collectPoint(x, y)
+            if finish:
+                self.m_curves.append(self.curve_collector.getCurve())
         self.m_pt0.setX(0)
         self.m_pt0.setY(0)
         self.m_pt1.setX(0)
         self.m_pt1.setY(0)
         self.update()
         self.repaint()
+        
