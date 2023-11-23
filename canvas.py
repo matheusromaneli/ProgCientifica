@@ -38,6 +38,7 @@ class Canvas(QtOpenGL.QGLWidget):
         self.state = _state
         if _state == "curve":
             self.curve_collector.activateCollector("Bezier2")
+            self.state = "line"
         else:
             self.curve_collector.deactivateCollector()
 
@@ -83,8 +84,8 @@ class Canvas(QtOpenGL.QGLWidget):
         glDeleteLists(self.list, 1)
         self.list = glGenLists(1)
         glNewList(self.list, GL_COMPILE)
-        pt0_U = self.convertPtCoordsToUniverse(self.m_pt0)
-        pt1_U = self.convertPtCoordsToUniverse(self.m_pt1)
+        pt0_U = self.m_pt0
+        pt1_U = self.m_pt1
         
         glColor3f(1.0, 1.0, 0.0)
         glBegin(GL_LINES)
@@ -93,14 +94,11 @@ class Canvas(QtOpenGL.QGLWidget):
         glVertex2f(pt1_U.x(), pt1_U.y())
         
         glEnd()
-        for curve in self.m_curves:
+        for curve in self.m_curves + [self.curve_collector.getCurveToDraw()]:
             glColor3f(0.0,1.0,0.0)
             glBegin(GL_LINE_STRIP)
-            for i in range(len(curve)):
-                pt0 = curve[i]
-                # pt1 = curve[i+1]
-                glVertex2f(pt0[0], pt0[1])
-                # glVertex2f(pt1[0], pt1[1])
+            for pt in curve:
+                glVertex2f(pt[0], pt[1])
             glEnd()
         if not(self._hmodel.isEmpty()):
             patches = self._hmodel.getPatches()
@@ -116,6 +114,8 @@ class Canvas(QtOpenGL.QGLWidget):
                     glEnd()
             segments = self._hmodel.getSegments()
             glColor3f(0.0, 0.0, 1.0) # blue
+            if self.curve_collector.m_isActive:
+                segments.append(self.curve_collector)
             for curves in segments:
                 ptc = curves.getPointsToDraw()
                 glBegin(GL_LINES)
@@ -189,13 +189,25 @@ class Canvas(QtOpenGL.QGLWidget):
 
     def mousePressEvent(self, event):
         self.m_buttonPressed = True
-        self.m_pt0 = event.pos()
+        x, y = self.getEventUCoordinates(event)
+        if self.state == "line":
+            self.m_pt0.setX(x)
+            self.m_pt0.setY(y)
+        if self.state == "curve":
+            self.curve_collector.update(x, y)
+
         
     def mouseMoveEvent(self, event):
-        if self.m_buttonPressed:
-            self.moved = True
-            self.m_pt1 = event.pos()
-            self.update()
+        if not self.m_buttonPressed:
+            return
+        self.moved = True
+        x, y = self.getEventUCoordinates(event)
+        if self.state == "line":
+            self.m_pt1.setX(x)
+            self.m_pt1.setY(y)
+        elif self.state == "curve":
+            self.curve_collector.update(x, y)
+        self.update()
 
             
     def mouseReleaseEvent(self, event):
@@ -204,23 +216,27 @@ class Canvas(QtOpenGL.QGLWidget):
                 self.m_pt0.setX(0)
                 self.m_pt0.setY(0)
                 return
-                
-            pt0_U = self.convertPtCoordsToUniverse(self.m_pt0)
-            pt1_U = self.convertPtCoordsToUniverse(self.m_pt1)
-            # self._model.setCurve(pt0_U.x(),pt0_U.y(),pt1_U.x(), pt1_U.y())
 
-            p0 = Point(pt0_U.x(), pt0_U.y())
-            p1 = Point(pt1_U.x(), pt1_U.y())
+            p0 = Point(self.m_pt0.x(), self.m_pt0.y())
+            p1 = Point(self.m_pt1.x(), self.m_pt1.y())
             segment = Line(p0,p1)
-            self._controller.insertSegment(segment,0.1)
-
+            if self.curve_collector.isActive():
+                print("vo pega curva")
+                self.state = "curve"
+                self.curve_collector.collectPoint(p0.x, p0.y)
+                self.curve_collector.collectPoint(p1.x, p1.y)
+                print(self.curve_collector.getCurveToDraw())
+            else:
+                self._controller.insertSegment(segment,0.1)
             self.m_buttonPressed = False
             self.moved = False
+
         elif self.state == "curve":
             x,y = self.getEventUCoordinates(event)
             finish = self.curve_collector.collectPoint(x, y)
             if finish:
                 self.m_curves.append(self.curve_collector.getCurve())
+                self.state = "line"
         self.m_pt0.setX(0)
         self.m_pt0.setY(0)
         self.m_pt1.setX(0)
