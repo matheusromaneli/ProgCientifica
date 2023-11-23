@@ -22,5 +22,5 @@ class Window(QMainWindow):
     def tbpressed(self,a):
         if a.text() == "fit":
             self.canvas.fitWorldToViewport()
-        else:
-            self.canvas.setState(a.text())
+        elif a.text() == "curve":
+            self.canvas.setState("curve")
