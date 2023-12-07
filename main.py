@@ -1,5 +1,5 @@
 import sys
-from window import *
+from shaper.window import *
 
 def main():
     app = QApplication(sys.argv)

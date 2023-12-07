@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from canvas import *
-from tools import TOOLS
+from .canvas import *
+from .tools import TOOLS
 
 class Window(QMainWindow):
 
@@ -24,3 +24,13 @@ class Window(QMainWindow):
             self.canvas.fitWorldToViewport()
         elif a.text() == "curve":
             self.canvas.setState("curve")
+        elif a.text() == "select":
+            self.canvas.setState("select")
+
+    def keyPressEvent(self, event):
+        if event.key() == 16777248:
+            self.canvas.shift = True
+    
+    def keyReleaseEvent(self, event):
+        if event.key() == 16777248:
+            self.canvas.shift = False

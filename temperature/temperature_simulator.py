@@ -65,8 +65,6 @@ for conn in connections:
             continue
         A[current_term][conn[i]-1] = func[i]
 
-print(A)
-print(b)
 x = np.linalg.solve(A,b)
 for i in range(4):
     for j in range(4):

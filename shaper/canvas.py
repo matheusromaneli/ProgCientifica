@@ -9,7 +9,8 @@ from hetool.he.heview import HeView
 from hetool.geometry.segments.line import Line
 from hetool.geometry.point import Point
 from hetool.compgeom.tesselation import Tesselation
-from collector import CurveCollector
+from hetool.include.hetool import Hetool
+from .collector import CurveCollector
 
 
 class Canvas(QtOpenGL.QGLWidget):
@@ -32,7 +33,8 @@ class Canvas(QtOpenGL.QGLWidget):
         self.m_pt1 = QPointF(0.0, 0.0)
         self.state = "None"
         self.curve_collector = CurveCollector()
-        self.m_curves = []
+        self.m_heTol = 20.0
+        self.shift = False
     
     def setState(self, _state):
         self.state = _state
@@ -84,22 +86,6 @@ class Canvas(QtOpenGL.QGLWidget):
         glDeleteLists(self.list, 1)
         self.list = glGenLists(1)
         glNewList(self.list, GL_COMPILE)
-        pt0_U = self.m_pt0
-        pt1_U = self.m_pt1
-        
-        glColor3f(1.0, 1.0, 0.0)
-        glBegin(GL_LINES)
-        
-        glVertex2f(pt0_U.x(), pt0_U.y())
-        glVertex2f(pt1_U.x(), pt1_U.y())
-        
-        glEnd()
-        for curve in self.m_curves + [self.curve_collector.getCurveToDraw()]:
-            glColor3f(0.0,1.0,0.0)
-            glBegin(GL_LINE_STRIP)
-            for pt in curve:
-                glVertex2f(pt[0], pt[1])
-            glEnd()
         if not(self._hmodel.isEmpty()):
             patches = self._hmodel.getPatches()
             for pat in patches:
@@ -114,8 +100,6 @@ class Canvas(QtOpenGL.QGLWidget):
                     glEnd()
             segments = self._hmodel.getSegments()
             glColor3f(0.0, 0.0, 1.0) # blue
-            if self.curve_collector.m_isActive:
-                segments.append(self.curve_collector)
             for curves in segments:
                 ptc = curves.getPointsToDraw()
                 glBegin(GL_LINES)
@@ -123,6 +107,31 @@ class Canvas(QtOpenGL.QGLWidget):
                 glVertex2f(ptc[1].getX(), ptc[1].getY())
                 glEnd()
 
+            points = self._hmodel.getPoints()
+            for point in points:
+                if point.isSelected():
+                    glColor3f(1.0, 0.0, 0.0)
+                else:
+                    glColor3f(0.0, 0.0, 0.0)
+                glPointSize(10)
+                glBegin(GL_POINTS)
+                glVertex2f(point.getX(), point.getY())
+                glEnd()
+
+        pt0_U = self.m_pt0
+        pt1_U = self.m_pt1
+        
+        glColor3f(1.0, 1.0, 0.0)
+        glBegin(GL_LINES)
+        glVertex2f(pt0_U.x(), pt0_U.y())
+        glVertex2f(pt1_U.x(), pt1_U.y())
+        glEnd()
+        temp_curve = self.curve_collector.getCurveToDraw()
+        glColor3f(0.0,1.0,0.0)
+        glBegin(GL_LINE_STRIP)
+        for pt in temp_curve:
+            glVertex2f(pt[0], pt[1])
+        glEnd()
         glEndList()
 
     def fitWorldToViewport(self):
@@ -194,9 +203,8 @@ class Canvas(QtOpenGL.QGLWidget):
             self.m_pt0.setX(x)
             self.m_pt0.setY(y)
         if self.state == "curve":
-            self.curve_collector.update(x, y)
+            self.curve_collector.update(x, y)   
 
-        
     def mouseMoveEvent(self, event):
         if not self.m_buttonPressed:
             return
@@ -221,13 +229,11 @@ class Canvas(QtOpenGL.QGLWidget):
             p1 = Point(self.m_pt1.x(), self.m_pt1.y())
             segment = Line(p0,p1)
             if self.curve_collector.isActive():
-                print("vo pega curva")
                 self.state = "curve"
                 self.curve_collector.collectPoint(p0.x, p0.y)
                 self.curve_collector.collectPoint(p1.x, p1.y)
-                print(self.curve_collector.getCurveToDraw())
             else:
-                self._controller.insertSegment(segment,0.1)
+                self._controller.insertSegment(segment,self.m_heTol)
             self.m_buttonPressed = False
             self.moved = False
 
@@ -235,12 +241,25 @@ class Canvas(QtOpenGL.QGLWidget):
             x,y = self.getEventUCoordinates(event)
             finish = self.curve_collector.collectPoint(x, y)
             if finish:
-                self.m_curves.append(self.curve_collector.getCurve())
+                curve = self.curve_collector.getCurve()
+                heSegment = []
+                for pt in curve:
+                    heSegment.append(pt[0])
+                    heSegment.append(pt[1])
+                try:
+                    self._controller.insertSegment(heSegment, self.m_heTol)
+                except:
+                    print("Falha ao inserir segmento")
                 self.state = "line"
+        elif self.state == "select":
+            x,y = self.getEventUCoordinates(event)
+            self._controller.selectPick(x, y, self.m_heTol, self.shift)
+            self.update()
+
         self.m_pt0.setX(0)
         self.m_pt0.setY(0)
         self.m_pt1.setX(0)
         self.m_pt1.setY(0)
-        self.update()
         self.repaint()
+        self.update()
         
