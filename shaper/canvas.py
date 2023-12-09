@@ -132,12 +132,15 @@ class Canvas(QtOpenGL.QGLWidget):
             glVertex2f(pt0_U.x(), pt0_U.y())
             glVertex2f(pt1_U.x(), pt1_U.y())
             glEnd()
-        elif self.state == "select":
+        elif self.state == "select" or self.state == "square":
             left = min(pt0_U.x(), pt1_U.x())
             right = max(pt0_U.x(), pt1_U.x())
             up = max(pt0_U.y(), pt1_U.y())
             down = min(pt0_U.y(), pt1_U.y())
-            glColor4f(0.1, 0.0, 0.9, 0.5)
+            if self.state == "select":
+                glColor4f(0.1, 0.0, 0.9, 0.5)
+            else:
+                glColor3f(0.0,1.0,0.0)
             glBegin(GL_QUADS)
             glVertex2f(left, up)
             glVertex2f(left, down)
@@ -218,7 +221,7 @@ class Canvas(QtOpenGL.QGLWidget):
     def mousePressEvent(self, event):
         self.m_buttonPressed = True
         x, y = self.getEventUCoordinates(event)
-        if self.state == "line" or self.state == "select":
+        if self.state == "line" or self.state == "select" or self.state == "square":
             self.m_pt0.setX(x)
             self.m_pt0.setY(y)
         elif self.state == "curve":
@@ -229,7 +232,7 @@ class Canvas(QtOpenGL.QGLWidget):
             return
         self.moved = True
         x, y = self.getEventUCoordinates(event)
-        if self.state == "line" or self.state == "select":
+        if self.state == "line" or self.state == "select" or self.state == "square":
             self.m_pt1.setX(x)
             self.m_pt1.setY(y)
         elif self.state == "curve":
@@ -253,7 +256,6 @@ class Canvas(QtOpenGL.QGLWidget):
                 self.curve_collector.collectPoint(p1.x, p1.y)
             else:
                 self._controller.insertSegment(segment,self.m_heTol)
-
         elif self.state == "curve":
             x,y = self.getEventUCoordinates(event)
             finish = self.curve_collector.collectPoint(x, y)
@@ -287,7 +289,29 @@ class Canvas(QtOpenGL.QGLWidget):
                             selected += 1
                         segment.setSelected(selected > len(points)/2) 
                 self.update()
+        elif self.state == "square":
+            if not self.moved:
+                self.m_pt0.setX(0)
+                self.m_pt0.setY(0)
+                return
+            
+            p00 = Point(self.m_pt0.x(), self.m_pt0.y())
+            p10 = Point(self.m_pt1.x(), self.m_pt0.y())
+            p11 = Point(self.m_pt1.x(), self.m_pt1.y())
+            p01 = Point(self.m_pt0.x(), self.m_pt1.y())
 
+            l1 = Line(p00,p10)
+            l2 = Line(p10,p11)
+            l3 = Line(p11,p01)
+            l4 = Line(p01,p00)
+            lines = [l1,l2,l3,l4]
+
+            for line in lines:
+                try:
+                    self._controller.insertSegment(line, self.m_heTol)
+                except:
+                    print("Falha ao inserir segmento")
+            
         self.m_pt0.setX(0)
         self.m_pt0.setY(0)
         self.m_pt1.setX(0)

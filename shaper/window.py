@@ -26,6 +26,8 @@ class Window(QMainWindow):
             self.canvas.setState("curve")
         elif a.text() == "select":
             self.canvas.setState("select")
+        elif a.text() == "square":
+            self.canvas.setState("square")
 
     def keyPressEvent(self, event):
         if event.key() == 16777248:
