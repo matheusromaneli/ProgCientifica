@@ -32,6 +32,10 @@ class Point():
     def isSelected(self):
         return self.selected
 
+    def isInside(self, x1, y1, x2, y2):
+        if min(x1,x2) < self.x < max(x1,x2) and min(y1,y2) < self.y < max(y1,y2):
+            return True
+        return False
     # Equality test with tolerance (Manhattan distance)
     @staticmethod
     def equal(p1, p2, tol):
