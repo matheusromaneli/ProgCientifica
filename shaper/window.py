@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from .canvas import *
 from .tools import TOOLS
+from .modal.generic import GenericModal
 
 class Window(QMainWindow):
 
@@ -11,6 +12,7 @@ class Window(QMainWindow):
         self.setWindowTitle("MyGLDrawer")
         self.canvas = Canvas()
         self.setCentralWidget(self.canvas)
+        self.mesh = None
         tb = self.addToolBar("File")
 
         for tool in TOOLS:
@@ -28,7 +30,15 @@ class Window(QMainWindow):
             self.canvas.setState("select")
         elif a.text() == "square":
             self.canvas.setState("square")
+        elif a.text() == "mesh":
+            self.mesh = GenericModal(self)
+            self.update_mesh()
 
+
+    def update_mesh(self):
+        value = self.mesh.input.value()
+        self.canvas.setMesh(value)
+            
     def keyPressEvent(self, event):
         if event.key() == 16777248:
             self.canvas.shift = True

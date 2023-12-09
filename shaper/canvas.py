@@ -35,6 +35,7 @@ class Canvas(QtOpenGL.QGLWidget):
         self.curve_collector = CurveCollector()
         self.m_heTol = 20.0
         self.shift = False
+        self.mesh = []
     
     def setState(self, _state):
         self.state = _state
@@ -44,6 +45,24 @@ class Canvas(QtOpenGL.QGLWidget):
         else:
             self.curve_collector.deactivateCollector()
 
+    def setMesh(self, divisor):
+        if divisor == 0:
+            return
+        left, right, bottom, top = self._view.getBoundBox()
+        self.mesh = []
+        ratio_x = (right-left)/divisor
+        ratio_y = (top-bottom)/divisor
+
+        aux_y = bottom
+        while aux_y < top + self.m_heTol:
+            aux_x = left
+            while aux_x < right + self.m_heTol:
+                self.mesh.append([aux_x, aux_y])
+                aux_x += ratio_x
+            aux_y += ratio_y
+        self.repaint()
+        self.update()
+
     def getEventUCoordinates(self, event):
         m_pt = event.pos()
         pt_u = self.convertPtCoordsToUniverse(m_pt)
@@ -52,6 +71,8 @@ class Canvas(QtOpenGL.QGLWidget):
     def initializeGL(self): #glClearColor(1.0, 1.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
         glEnable(GL_LINE_SMOOTH)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
         self.list = glGenLists(1)
             
     def resizeGL(self, _width, _height):
@@ -81,8 +102,6 @@ class Canvas(QtOpenGL.QGLWidget):
     def paintGL(self):
         # clear the buffer with the current clear color
         glClear(GL_COLOR_BUFFER_BIT)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_BLEND);
 
         glCallList(self.list)
         glDeleteLists(self.list, 1)
@@ -153,6 +172,11 @@ class Canvas(QtOpenGL.QGLWidget):
         glBegin(GL_LINE_STRIP)
         for pt in temp_curve:
             glVertex2f(pt[0], pt[1])
+        glEnd()
+
+        glBegin(GL_POINTS)
+        for [x,y] in self.mesh:
+            glVertex2f(x,y)
         glEnd()
         glEndList()
 
