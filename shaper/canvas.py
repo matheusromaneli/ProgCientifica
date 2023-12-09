@@ -101,9 +101,13 @@ class Canvas(QtOpenGL.QGLWidget):
                     glVertex2d(triangs[j][2].getX(), triangs[j][2].getY())
                     glEnd()
             segments = self._hmodel.getSegments()
-            glColor3f(0.0, 0.0, 1.0) # blue
             for line in segments:
+                if line.isSelected():
+                    glColor3f(1.0, 0.0, 0.0)
+                else:
+                    glColor3f(0.0, 0.0, 1.0)
                 ptc = line.getPointsToDraw()
+                glLineWidth(3)
                 glBegin(GL_LINES)
                 glVertex2f(ptc[0].getX(), ptc[0].getY())
                 glVertex2f(ptc[1].getX(), ptc[1].getY())
@@ -115,7 +119,7 @@ class Canvas(QtOpenGL.QGLWidget):
                     glColor3f(1.0, 0.0, 0.0)
                 else:
                     glColor3f(1.0, 1.0, 1.0)
-                glPointSize(10)
+                glPointSize(5)
                 glBegin(GL_POINTS)
                 glVertex2f(point.getX(), point.getY())
                 glEnd()
@@ -147,9 +151,6 @@ class Canvas(QtOpenGL.QGLWidget):
         for pt in temp_curve:
             glVertex2f(pt[0], pt[1])
         glEnd()
-
-
-
         glEndList()
 
     def fitWorldToViewport(self):
@@ -275,10 +276,16 @@ class Canvas(QtOpenGL.QGLWidget):
             else:   
                 points = self._hmodel.getPoints()
                 for point in points:
-                    if point.isInside(self.m_pt0.x(), self.m_pt0.y(), self.m_pt1.x(), self.m_pt1.y()):
-                        point.setSelected(True)
-                    else:
-                        point.setSelected(False)
+                    point.setSelected(point.isInside(self.m_pt0.x(), self.m_pt0.y(), self.m_pt1.x(), self.m_pt1.y()))
+                
+                segments = self._hmodel.getSegments()
+                for segment in segments:
+                    points = segment.getPoints()
+                    selected = 0
+                    for point in points:
+                        if point.isInside(self.m_pt0.x(), self.m_pt0.y(), self.m_pt1.x(), self.m_pt1.y()):
+                            selected += 1
+                        segment.setSelected(selected > len(points)/2) 
                 self.update()
 
         self.m_pt0.setX(0)
