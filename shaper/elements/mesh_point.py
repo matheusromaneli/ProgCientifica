@@ -8,6 +8,8 @@ class MeshPoint(Point):
         self.force_value = 0
         self.force_direction = (0,0)
         self.default = True
+        self.pos = [0,0]
+        self.connections = [0,0,0,0,0]
     
     @property
     def color(self):

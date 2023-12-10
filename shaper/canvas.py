@@ -10,6 +10,7 @@ from hetool.geometry.segments.line import Line
 from hetool.geometry.point import Point
 from hetool.compgeom.tesselation import Tesselation
 from .elements.mesh_point import MeshPoint
+from .elements.mesh_model import MeshModel
 from .collector import CurveCollector
 
 
@@ -35,7 +36,7 @@ class Canvas(QtOpenGL.QGLWidget):
         self.curve_collector = CurveCollector()
         self.m_heTol = 20.0
         self.shift = False
-        self.mesh = []
+        self.mesh = MeshModel()
     
     def setState(self, _state):
         self.state = _state
@@ -53,7 +54,8 @@ class Canvas(QtOpenGL.QGLWidget):
         if distance == 0:
             return
         left, right, bottom, top = self._view.getBoundBox()
-        self.mesh = []
+
+        self.mesh.points = []
         surfaces = self._hmodel.getPatches()
         aux_y = bottom
         while aux_y < top + self.m_heTol:
@@ -62,7 +64,9 @@ class Canvas(QtOpenGL.QGLWidget):
                 pt = MeshPoint(aux_x, aux_y)
                 for surface in surfaces:
                     if surface.isPointInside(pt):
-                        self.mesh.append(pt)
+                        self.mesh.points.append(pt)
+                        # stradil_left = 
+                        break
                 aux_x += distance
             aux_y += distance
         self.repaint()
@@ -70,7 +74,7 @@ class Canvas(QtOpenGL.QGLWidget):
 
     def getMeshSelected(self):
         selected = []
-        for pt in self.mesh:
+        for pt in self.mesh.points:
             if pt.isSelected():
                 selected.append(pt)
         return selected
@@ -187,7 +191,7 @@ class Canvas(QtOpenGL.QGLWidget):
         glEnd()
 
         glBegin(GL_POINTS)
-        for pt in self.mesh:
+        for pt in self.mesh.points:
             r,g,b = pt.color
             glColor3f(r,g,b)
             glVertex2f(pt.getX(), pt.getY())
@@ -311,10 +315,10 @@ class Canvas(QtOpenGL.QGLWidget):
         elif self.state == "select":
             x,y = self.getEventUCoordinates(event)
             if not self.moved:
-                for point in self.mesh:
+                for point in self.mesh.points:
                     point.setSelected(False)
             else:
-                for point in self.mesh:
+                for point in self.mesh.points:
                     point.setSelected(point.isInside(self.m_pt0.x(), self.m_pt0.y(), self.m_pt1.x(), self.m_pt1.y()))
                 self.update()
         elif self.state == "square":
