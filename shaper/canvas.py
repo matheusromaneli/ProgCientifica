@@ -9,7 +9,7 @@ from hetool.he.heview import HeView
 from hetool.geometry.segments.line import Line
 from hetool.geometry.point import Point
 from hetool.compgeom.tesselation import Tesselation
-from hetool.include.hetool import Hetool
+from .elements.mesh_point import MeshPoint
 from .collector import CurveCollector
 
 
@@ -45,27 +45,35 @@ class Canvas(QtOpenGL.QGLWidget):
         else:
             self.curve_collector.deactivateCollector()
 
-    def setMesh(self, divisor):
-        if divisor == 0:
+    def setAttrs(self, temp, is_fixed, force_value, force_direction):
+        for point in self.getMeshSelected():
+            point.setAttrs(temp,is_fixed,force_value,force_direction)
+
+    def setMesh(self, distance):
+        if distance == 0:
             return
         left, right, bottom, top = self._view.getBoundBox()
         self.mesh = []
-        ratio_x = (right-left)/divisor
-        ratio_y = (top-bottom)/divisor
         surfaces = self._hmodel.getPatches()
-
         aux_y = bottom
         while aux_y < top + self.m_heTol:
             aux_x = left
             while aux_x < right + self.m_heTol:
-                pt = Point(aux_x, aux_y)
+                pt = MeshPoint(aux_x, aux_y)
                 for surface in surfaces:
                     if surface.isPointInside(pt):
-                        self.mesh.append([aux_x, aux_y])
-                aux_x += ratio_x
-            aux_y += ratio_y
+                        self.mesh.append(pt)
+                aux_x += distance
+            aux_y += distance
         self.repaint()
         self.update()
+
+    def getMeshSelected(self):
+        selected = []
+        for pt in self.mesh:
+            if pt.isSelected():
+                selected.append(pt)
+        return selected
 
     def getEventUCoordinates(self, event):
         m_pt = event.pos()
@@ -116,7 +124,7 @@ class Canvas(QtOpenGL.QGLWidget):
             for pat in patches:
                 pts = pat.getPoints()
                 triangs = Tesselation.tessellate(pts)
-                glColor3f(1.0,0.0,1.0)
+                glColor3f(0.4,0.3,5.0)
                 for j in range(len(triangs)):
                     glBegin(GL_TRIANGLES)
                     glVertex2d(triangs[j][0].getX(), triangs[j][0].getY())
@@ -179,8 +187,10 @@ class Canvas(QtOpenGL.QGLWidget):
         glEnd()
 
         glBegin(GL_POINTS)
-        for [x,y] in self.mesh:
-            glVertex2f(x,y)
+        for pt in self.mesh:
+            r,g,b = pt.color
+            glColor3f(r,g,b)
+            glVertex2f(pt.getX(), pt.getY())
         glEnd()
         glEndList()
 
@@ -267,7 +277,6 @@ class Canvas(QtOpenGL.QGLWidget):
             self.curve_collector.update(x, y)
         self.update()
 
-            
     def mouseReleaseEvent(self, event):
         if self.state == "line":
             if not self.moved:
@@ -301,21 +310,12 @@ class Canvas(QtOpenGL.QGLWidget):
                 self.state = "line"
         elif self.state == "select":
             x,y = self.getEventUCoordinates(event)
-            if not self.moved or self.shift:
-                self._controller.selectPick(x, y, self.m_heTol, self.shift)
-            else:   
-                points = self._hmodel.getPoints()
-                for point in points:
+            if not self.moved:
+                for point in self.mesh:
+                    point.setSelected(False)
+            else:
+                for point in self.mesh:
                     point.setSelected(point.isInside(self.m_pt0.x(), self.m_pt0.y(), self.m_pt1.x(), self.m_pt1.y()))
-                
-                segments = self._hmodel.getSegments()
-                for segment in segments:
-                    points = segment.getPoints()
-                    selected = 0
-                    for point in points:
-                        if point.isInside(self.m_pt0.x(), self.m_pt0.y(), self.m_pt1.x(), self.m_pt1.y()):
-                            selected += 1
-                        segment.setSelected(selected > len(points)/2) 
                 self.update()
         elif self.state == "square":
             if not self.moved:

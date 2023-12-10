@@ -3,6 +3,7 @@ from PyQt5.QtGui import *
 from .canvas import *
 from .tools import TOOLS
 from .modal.generic import GenericModal
+from .modal.attr_modal import AttrModal
 
 class Window(QMainWindow):
 
@@ -12,7 +13,8 @@ class Window(QMainWindow):
         self.setWindowTitle("MyGLDrawer")
         self.canvas = Canvas()
         self.setCentralWidget(self.canvas)
-        self.mesh = None
+        self.mesh = [None]
+        self.mesh_info = [None]
         tb = self.addToolBar("File")
 
         for tool in TOOLS:
@@ -31,12 +33,26 @@ class Window(QMainWindow):
         elif a.text() == "square":
             self.canvas.setState("square")
         elif a.text() == "mesh":
-            self.mesh = GenericModal(self)
+            self.modal(self.mesh, GenericModal)
             self.update_mesh()
+        elif a.text() == "attrinfo":
+            self.modal(self.mesh_info, AttrModal)
+            infos = self.mesh_info[0]
+            self.canvas.setAttrs(
+                infos.temperature.value(),
+                infos.is_fixed.checkState(),
+                infos.force_value.value(),
+                infos.force_direction_values(),
+            )
 
+    def modal(self, var, modal_class):
+        if var[0] is None:
+            var[0] = modal_class(self)
+        else:
+            var[0].exec_()
 
     def update_mesh(self):
-        value = self.mesh.input.value()
+        value = self.mesh[0].input.value()
         self.canvas.setMesh(value)
             
     def keyPressEvent(self, event):
