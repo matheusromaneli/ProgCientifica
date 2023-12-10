@@ -52,12 +52,16 @@ class Canvas(QtOpenGL.QGLWidget):
         self.mesh = []
         ratio_x = (right-left)/divisor
         ratio_y = (top-bottom)/divisor
+        surfaces = self._hmodel.getPatches()
 
         aux_y = bottom
         while aux_y < top + self.m_heTol:
             aux_x = left
             while aux_x < right + self.m_heTol:
-                self.mesh.append([aux_x, aux_y])
+                pt = Point(aux_x, aux_y)
+                for surface in surfaces:
+                    if surface.isPointInside(pt):
+                        self.mesh.append([aux_x, aux_y])
                 aux_x += ratio_x
             aux_y += ratio_y
         self.repaint()
