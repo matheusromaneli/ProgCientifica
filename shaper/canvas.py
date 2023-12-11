@@ -21,6 +21,7 @@ class Canvas(QtOpenGL.QGLWidget):
         self._hmodel = HeModel()
         self._controller = HeController(self._hmodel)
         self._view = HeView(self._hmodel)
+        self.m_heTol = 20.0
         self.m_w = 0 # width: GL canvas horizontal size
         self.m_h = 0 # height: GL canvas vertical size
         self.m_L = -1000.0
@@ -28,14 +29,16 @@ class Canvas(QtOpenGL.QGLWidget):
         self.m_B = -1000.0
         self.m_T = 1000.0
         self.list = None
-        self.m_buttonPressed = False
-        self.moved = False
+        
+        self.state = "None"
         self.m_pt0 = QPointF(0.0, 0.0)
         self.m_pt1 = QPointF(0.0, 0.0)
-        self.state = "None"
-        self.curve_collector = CurveCollector()
-        self.m_heTol = 20.0
+
+        self.m_buttonPressed = False
+        self.moved = False
         self.shift = False
+
+        self.curve_collector = CurveCollector()
         self.mesh = MeshModel()
     
     def setState(self, _state):
