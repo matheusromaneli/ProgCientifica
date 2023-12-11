@@ -23,6 +23,7 @@ class TemperatureSimulator:
         self.connections = data["connections"]
 
     def run(self):
+        """Run Simulation and return values of points."""
         size = len(self.connections)
         A = np.zeros((size,size))
         b = np.zeros(size)

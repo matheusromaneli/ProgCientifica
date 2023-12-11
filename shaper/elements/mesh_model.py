@@ -18,7 +18,7 @@ class MeshModel:
     def getSelectedPoints(self):
         """get selected points in mesh"""
         selected = []
-        for pt in self.mesh.points:
+        for pt in self.points:
             if pt.isSelected():
                 selected.append(pt)
         return selected
@@ -34,10 +34,10 @@ class MeshModel:
             Else: select every point inside square x1,y1 to x2,y2
         """
         if not moved:
-            for point in self.mesh.points:
+            for point in self.points:
                 point.setSelected(False)
         else:
-            for point in self.mesh.points:
+            for point in self.points:
                 point.setSelected(point.isInside(x1, y1, x2, y2))
 
     def findPoint(self, _x, _y):
