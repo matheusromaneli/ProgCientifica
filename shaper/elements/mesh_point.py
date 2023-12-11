@@ -17,10 +17,12 @@ class MeshPoint(Point):
     
     @property
     def connection(self):
+        """connection struct"""
         return [self.left, self.right, self.bottom, self.top, self.index]
     
     @property
     def color(self):
+        """color based on information inside point"""
         if self.isSelected():
             return (1.0,0.0,0.0)
         if self.default:
@@ -28,6 +30,7 @@ class MeshPoint(Point):
         return (abs(self.temperature/99), abs(self.force_value/99) ,1 if self.is_fixed else 0)
 
     def setAttrs(self, temp, is_fixed, force_value, force_direction):
+        """Add attributes if different than default"""
         if not (temp or is_fixed or force_value or force_direction[0] or force_direction[1]):
             return 
         self.temperature = temp

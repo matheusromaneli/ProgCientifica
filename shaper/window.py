@@ -38,7 +38,7 @@ class Window(QMainWindow):
         elif a.text() == "attrinfo":
             self.modal(self.mesh_info, AttrModal)
             infos = self.mesh_info[0]
-            self.canvas.setAttrs(
+            self.canvas.setMeshAttrs(
                 infos.temperature.value(),
                 infos.is_fixed.checkState(),
                 infos.force_value.value(),

@@ -46,9 +46,8 @@ class Canvas(QtOpenGL.QGLWidget):
         else:
             self.curve_collector.deactivateCollector()
 
-    def setAttrs(self, temp, is_fixed, force_value, force_direction):
-        for point in self.getMeshSelected():
-            point.setAttrs(temp,is_fixed,force_value,force_direction)
+    def setMeshAttrs(self, temp, is_fixed, force_value, force_direction):
+        self.mesh.setAttrs(temp,is_fixed,force_value,force_direction)
 
     def setMesh(self, distance):
         if distance == 0:
@@ -77,9 +76,6 @@ class Canvas(QtOpenGL.QGLWidget):
             aux_y += distance
         self.repaint()
         self.update()
-
-    def getMeshSelected(self):
-        return self.mesh.getSelectedPoints()
 
     def getEventUCoordinates(self, event):
         m_pt = event.pos()
@@ -323,13 +319,7 @@ class Canvas(QtOpenGL.QGLWidget):
                 self.state = "line"
         elif self.state == "select":
             x,y = self.getEventUCoordinates(event)
-            if not self.moved:
-                for point in self.mesh.points:
-                    point.setSelected(False)
-            else:
-                for point in self.mesh.points:
-                    point.setSelected(point.isInside(self.m_pt0.x(), self.m_pt0.y(), self.m_pt1.x(), self.m_pt1.y()))
-                self.update()
+            self.mesh.setSelected(self.moved, self.m_pt0.x(), self.m_pt0.y(), self.m_pt1.x(), self.m_pt1.y())
         elif self.state == "square":
             if not self.moved:
                 self.m_pt0.setX(0)
