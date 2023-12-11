@@ -14,6 +14,13 @@ class MeshModel:
         self.points = []
         self.data = None
 
+    def getSelectedPoints(self):
+        selected = []
+        for pt in self.mesh.points:
+            if pt.isSelected():
+                selected.append(pt)
+        return selected
+
     def findPoint(self, _x,_y):
         for point in self.points:
             if point.getX() == _x and point.getY() == _y:

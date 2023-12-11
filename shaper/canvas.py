@@ -79,11 +79,7 @@ class Canvas(QtOpenGL.QGLWidget):
         self.update()
 
     def getMeshSelected(self):
-        selected = []
-        for pt in self.mesh.points:
-            if pt.isSelected():
-                selected.append(pt)
-        return selected
+        return self.mesh.getSelectedPoints()
 
     def getEventUCoordinates(self, event):
         m_pt = event.pos()
