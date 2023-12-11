@@ -5,5 +5,6 @@ TOOLS = [
     {"name": "square", "asset": "square.png"},
     {"name": "mesh", "asset": "mesh.png"},
     {"name": "attrinfo", "asset": "attr.png"},
+    {"name": "export", "asset": "export.png"},
 ]
 

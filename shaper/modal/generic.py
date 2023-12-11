@@ -10,9 +10,10 @@ class GenericModal(QDialog):
         self.buttonBox.rejected.connect(self.reject)
 
         self.layout = QVBoxLayout()
-        message = QLabel("Number of points:")
+        message = QLabel("Distance of points:")
         self.input = QSpinBox()
-        self.input.setValue(20)
+        self.input.setValue(80)
+        self.input.setMaximum(300)
         self.layout.addWidget(message)
         self.layout.addWidget(self.input)
         self.layout.addWidget(self.buttonBox)

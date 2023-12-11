@@ -54,8 +54,7 @@ class Canvas(QtOpenGL.QGLWidget):
         if distance == 0:
             return
         left, right, bottom, top = self._view.getBoundBox()
-
-        self.mesh.points = []
+        self.mesh.reset()
         surfaces = self._hmodel.getPatches()
         aux_y = bottom
         while aux_y < top + self.m_heTol:
@@ -64,8 +63,15 @@ class Canvas(QtOpenGL.QGLWidget):
                 pt = MeshPoint(aux_x, aux_y)
                 for surface in surfaces:
                     if surface.isPointInside(pt):
-                        self.mesh.points.append(pt)
-                        # stradil_left = 
+                        self.mesh.append(pt)
+                        stradil_left = self.mesh.findPoint(aux_x-distance, aux_y)
+                        if stradil_left is not None:
+                            stradil_left.right = pt.index
+                            pt.left = stradil_left.index
+                        stradil_bottom = self.mesh.findPoint(aux_x, aux_y-distance)
+                        if stradil_bottom is not None:
+                            stradil_bottom.top = pt.index
+                            pt.bottom = stradil_bottom.index
                         break
                 aux_x += distance
             aux_y += distance
@@ -84,6 +90,14 @@ class Canvas(QtOpenGL.QGLWidget):
         pt_u = self.convertPtCoordsToUniverse(m_pt)
         return pt_u.x(), pt_u.y()
     
+    def export_temperature(self):
+        self.mesh.export_temperature()
+
+    def run_temperature(self):
+        self.mesh.run_temperature()
+        self.repaint()
+        self.update()
+
     def initializeGL(self): #glClearColor(1.0, 1.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
         glEnable(GL_LINE_SMOOTH)
@@ -189,7 +203,6 @@ class Canvas(QtOpenGL.QGLWidget):
         for pt in temp_curve:
             glVertex2f(pt[0], pt[1])
         glEnd()
-
         glBegin(GL_POINTS)
         for pt in self.mesh.points:
             r,g,b = pt.color

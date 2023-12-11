@@ -3,13 +3,21 @@ from hetool.geometry.point import Point
 class MeshPoint(Point):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.temperature = 0
+        self.temperature = None
         self.is_fixed = False
         self.force_value = 0
         self.force_direction = (0,0)
         self.default = True
         self.pos = [0,0]
-        self.connections = [0,0,0,0,0]
+        self.index = 0
+        self.left = 0
+        self.right = 0
+        self.bottom = 0
+        self.top = 0
+    
+    @property
+    def connection(self):
+        return [self.left, self.right, self.bottom, self.top, self.index]
     
     @property
     def color(self):

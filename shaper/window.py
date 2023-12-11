@@ -44,6 +44,9 @@ class Window(QMainWindow):
                 infos.force_value.value(),
                 infos.force_direction_values(),
             )
+        elif a.text() == "export":
+            self.canvas.export_temperature()
+            self.canvas.run_temperature()
 
     def modal(self, var, modal_class):
         if var[0] is None:
