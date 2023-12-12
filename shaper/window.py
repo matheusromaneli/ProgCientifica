@@ -4,6 +4,7 @@ from .canvas import *
 from .tools import TOOLS
 from .modal.generic import GenericModal
 from .modal.attr_modal import AttrModal
+from .modal.export_modal import ExportModal
 
 class Window(QMainWindow):
 
@@ -15,6 +16,7 @@ class Window(QMainWindow):
         self.setCentralWidget(self.canvas)
         self.mesh = [None]
         self.mesh_info = [None]
+        self.export_type = [None]
         tb = self.addToolBar("File")
 
         for tool in TOOLS:
@@ -45,8 +47,16 @@ class Window(QMainWindow):
                 infos.force_direction_values(),
             )
         elif a.text() == "export":
-            self.canvas.export_temperature()
-            self.canvas.run_temperature()
+            self.modal(self.export_type, ExportModal)
+            infos = self.export_type [0]
+            archiev_name = infos.archiev_name.text()
+            if infos.data_type.currentText() == "Calor":
+                self.canvas.export_temperature(archiev_name)
+                self.canvas.run_temperature()
+            elif infos.data_type.currentText() == "Particulas":
+                self.canvas.export_particle(archiev_name)
+                self.canvas.run_particle()
+
 
     def modal(self, var, modal_class):
         if var[0] is None:

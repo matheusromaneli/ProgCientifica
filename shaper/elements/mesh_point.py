@@ -1,14 +1,14 @@
 from hetool.geometry.point import Point
+from math import sqrt
 
 class MeshPoint(Point):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.temperature = None
-        self.is_fixed = False
+        self.is_fixed = 0
         self.force_value = 0
         self.force_direction = (0,0)
         self.default = True
-        self.pos = [0,0]
         self.index = 0
         self.left = 0
         self.right = 0
@@ -20,6 +20,16 @@ class MeshPoint(Point):
         """connection struct"""
         return [self.left, self.right, self.bottom, self.top, self.index]
     
+    @property
+    def pos(self):
+        return [self.getX(), self.getY()]
+
+    @property
+    def force(self):
+        """derivative force based on direction"""
+        fx,fy = self.normalize(self.force_direction[0], self.force_direction[1])
+        return [fx*self.force_value, fy*self.force_value]
+
     @property
     def color(self):
         """color based on information inside point"""
@@ -38,3 +48,10 @@ class MeshPoint(Point):
         self.force_value = force_value
         self.force_direction = force_direction
         self.default = False
+
+    def normalize(self,x,y):
+        dist = sqrt(x*x+y*y)
+        if dist > 0.0:
+            return x/dist, y/dist
+        else:
+            return 0,0

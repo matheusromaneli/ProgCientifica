@@ -1,9 +1,11 @@
 import json
 from .mesh_point import MeshPoint
 from simulators.temperature_simulator import TemperatureSimulator
+from simulators.particle_simulator import ParticleSimulator
 
 class MeshModel:
     temp_simulator = TemperatureSimulator()
+    part_simulator = ParticleSimulator()
     def __init__(self):
         self.points: list[MeshPoint] = []
         self.curr_index = 1
@@ -60,6 +62,43 @@ class MeshModel:
         for i in range(len(self.points)):
             self.points[i].temperature = result[i]
             self.points[i].default = False
+
+    def run_particle(self):
+        self.part_simulator.setData(self.data)
+        result = self.part_simulator.run(300)
+        print(len(result), len(self.points))
+        print(result)
+        for i in range(0,len(result),2):
+            cur_point = self.points[int(i/2)]
+            res_x = cur_point.getX() + result[i][0]
+            res_y = cur_point.getY() + result[i+1][0]
+            cur_point.setX(res_x)
+            cur_point.setY(res_y)
+
+
+    def export_particle(self, file_name="data"):
+        """export particle data to <file_name>.json"""
+        positions = []
+        connections = []
+        forces = []
+        restrictions = []
+
+        for pt in self.points:
+            positions.append(pt.pos)
+            connections.append(pt.connection)
+            forces += pt.force
+            restrictions += [pt.is_fixed, pt.is_fixed]
+
+        self.data = {
+            "positions": positions,
+            "connections": connections,
+            "forces": forces,
+            "restrictions": restrictions,
+        }
+
+        print(self.data)
+        with open(f"{file_name}.json", "w") as file:
+            json.dump(self.data, file)
 
     def export_temperature(self, file_name="data"):
         """export temperature data to <file_name>.json"""

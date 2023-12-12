@@ -85,13 +85,23 @@ class Canvas(QtOpenGL.QGLWidget):
         pt_u = self.convertPtCoordsToUniverse(m_pt)
         return pt_u.x(), pt_u.y()
     
-    def export_temperature(self):
-        self.mesh.export_temperature()
+    def export_temperature(self, file_name):
+        self.mesh.export_temperature(file_name)
+
+    def export_particle(self, file_name):
+        self.mesh.export_particle(file_name)
 
     def run_temperature(self):
+        self.mesh.export_temperature()
         self.mesh.run_temperature()
         self.repaint()
         self.update()
+
+    def run_particle(self):
+            self.mesh.export_particle()
+            self.mesh.run_particle()
+            self.repaint()
+            self.update()
 
     def initializeGL(self): #glClearColor(1.0, 1.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
