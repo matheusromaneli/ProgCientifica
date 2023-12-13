@@ -65,9 +65,7 @@ class MeshModel:
 
     def run_particle(self):
         self.part_simulator.setData(self.data)
-        result = self.part_simulator.run(300)
-        print(len(result), len(self.points))
-        print(result)
+        result = self.part_simulator.run(3600)
         for i in range(0,len(result),2):
             cur_point = self.points[int(i/2)]
             res_x = cur_point.getX() + result[i][0]
@@ -76,7 +74,7 @@ class MeshModel:
             cur_point.setY(res_y)
 
 
-    def export_particle(self, file_name="data"):
+    def export_particle(self, size, file_name="data"):
         """export particle data to <file_name>.json"""
         positions = []
         connections = []
@@ -90,13 +88,13 @@ class MeshModel:
             restrictions += [pt.is_fixed, pt.is_fixed]
 
         self.data = {
+            "particle_size": size,
             "positions": positions,
             "connections": connections,
             "forces": forces,
             "restrictions": restrictions,
         }
 
-        print(self.data)
         with open(f"{file_name}.json", "w") as file:
             json.dump(self.data, file)
 

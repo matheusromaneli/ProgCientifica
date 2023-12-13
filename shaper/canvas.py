@@ -97,8 +97,9 @@ class Canvas(QtOpenGL.QGLWidget):
         self.repaint()
         self.update()
 
-    def run_particle(self):
-            self.mesh.export_particle()
+    def run_particle(self, distance):
+            particle_size = distance/2
+            self.mesh.export_particle(particle_size)
             self.mesh.run_particle()
             self.repaint()
             self.update()

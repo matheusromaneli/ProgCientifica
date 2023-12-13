@@ -35,34 +35,33 @@ class Window(QMainWindow):
         elif a.text() == "square":
             self.canvas.setState("square")
         elif a.text() == "mesh":
-            self.modal(self.mesh, GenericModal)
-            self.update_mesh()
+            if self.modal(self.mesh, GenericModal):
+                self.update_mesh()
         elif a.text() == "attrinfo":
-            self.modal(self.mesh_info, AttrModal)
-            infos = self.mesh_info[0]
-            self.canvas.setMeshAttrs(
-                infos.temperature.value(),
-                infos.is_fixed.checkState(),
-                infos.force_value.value(),
-                infos.force_direction_values(),
-            )
+            if self.modal(self.mesh_info, AttrModal):
+                infos = self.mesh_info[0]
+                self.canvas.setMeshAttrs(
+                    infos.temperature.value(),
+                    infos.is_fixed.checkState(),
+                    infos.force_value.value(),
+                    infos.force_direction_values(),
+                )
         elif a.text() == "export":
-            self.modal(self.export_type, ExportModal)
-            infos = self.export_type [0]
-            archiev_name = infos.archiev_name.text()
-            if infos.data_type.currentText() == "Calor":
-                self.canvas.export_temperature(archiev_name)
-                self.canvas.run_temperature()
-            elif infos.data_type.currentText() == "Particulas":
-                self.canvas.export_particle(archiev_name)
-                self.canvas.run_particle()
+            if self.modal(self.export_type, ExportModal):
+                infos = self.export_type [0]
+                archiev_name = infos.archiev_name.text()
+                if infos.data_type.currentText() == "Calor":
+                    self.canvas.export_temperature(archiev_name)
+                    self.canvas.run_temperature()
+                elif infos.data_type.currentText() == "Particulas":
+                    self.canvas.export_particle(archiev_name)
+                    self.canvas.run_particle(self.mesh[0].input.value())
 
 
     def modal(self, var, modal_class):
         if var[0] is None:
             var[0] = modal_class(self)
-        else:
-            var[0].exec_()
+        return var[0].exec_()
 
     def update_mesh(self):
         value = self.mesh[0].input.value()

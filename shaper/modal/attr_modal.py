@@ -17,12 +17,14 @@ class AttrModal(QDialog):
         self.is_fixed = QCheckBox()
         message_force_value = QLabel("Force value (in N):")
         self.force_value = QSpinBox()
-        self.force_value.setMinimum(-99)
+        self.force_value.setMaximum(1000)
         message_force_direction = QLabel("Force direction (x,y):")
         self.force_direction_x = QSpinBox()
-        self.force_direction_x.setMinimum(-99)
+        self.force_direction_x.setMinimum(-1)
+        self.force_direction_x.setMaximum(1)
         self.force_direction_y = QSpinBox()
-        self.force_direction_y.setMinimum(-99)
+        self.force_direction_y.setMinimum(-1)
+        self.force_direction_y.setMaximum(1)
 
         self.layout.addWidget(message_temp)
         self.layout.addWidget(self.temperature)
@@ -38,7 +40,6 @@ class AttrModal(QDialog):
         self.layout.addWidget(self.force_direction_y)
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
-        self.exec_()
 
     def force_direction_values(self):
         return (self.force_direction_x.value(), self.force_direction_y.value())

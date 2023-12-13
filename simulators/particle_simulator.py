@@ -44,15 +44,8 @@ class ParticleSimulator:
         self.__init__(positions, connections, forces, restrictions)
 
     def run(self, iterations):
-        plot_x = []
-        plot_y = []
-        for i in range(iterations):
-            result = self.iteration()
-            plot_x.append(i)
-            plot_y.append(result[0][0])
-        print(plot_x,plot_y)
-        plt.plot(plot_x,plot_y)
-        plt.show()
+        for _ in range(iterations):
+            self.iteration()
         return self.u
 
     def iteration(self):        

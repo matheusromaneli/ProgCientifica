@@ -18,4 +18,3 @@ class GenericModal(QDialog):
         self.layout.addWidget(self.input)
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
-        self.exec_()
